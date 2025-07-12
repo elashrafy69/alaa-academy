@@ -60,8 +60,7 @@ def create_sample_data():
             'first_name': 'علاء',
             'last_name': 'عبد الحميد',
             'user_type': 'instructor',
-            'bio': 'مدرب معتمد في التسويق الرقمي وتطوير الأعمال',
-            'specialization': 'التسويق الرقمي'
+            'bio': 'مدرب معتمد في التسويق الرقمي وتطوير الأعمال'
         }
     )
     if created:
@@ -114,6 +113,8 @@ def create_sample_data():
         )
         if created:
             print(f'✅ تم إنشاء دورة: {course.title}')
+        else:
+            print(f'✅ الدورة موجودة بالفعل: {course.title}')
 
 def main():
     """الدالة الرئيسية"""
