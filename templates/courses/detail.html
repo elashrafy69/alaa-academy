@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} - أكاديمية علاء عبد الحميد{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Course Content -->
+        <div class="col-lg-8">
+            <!-- Course Header -->
+            <div class="card mb-4">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" class="card-img-top" 
+                     alt="{{ course.title }}" style="height: 300px; object-fit: cover;">
+                {% endif %}
+                
+                <div class="card-body">
+                    <!-- Category and Level -->
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2">{{ course.category.name }}</span>
+                        <span class="badge bg-secondary">{{ course.get_difficulty_level_display }}</span>
+                        {% if course.is_featured %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-star me-1"></i>مميزة
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="card-title">{{ course.title }}</h1>
+                    <p class="card-text">{{ course.description|linebreaks }}</p>
+                    
+                    <!-- Course Stats -->
+                    <div class="row text-center mb-3">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h6 class="text-muted mb-0">المدة</h6>
+                                <strong>{{ course.estimated_duration }} ساعة</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h6 class="text-muted mb-0">الدروس</h6>
+                                <strong>{{ course.total_lessons }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h6 class="text-muted mb-0">الطلاب</h6>
+                                <strong>{{ course.enrollment_count }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted mb-0">المستوى</h6>
+                            <strong>{{ course.get_difficulty_level_display }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Objectives -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye me-2"></i>أهداف التعلم
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ course.learning_objectives|linebreaks }}
+                </div>
+            </div>
+            
+            <!-- Prerequisites -->
+            {% if course.prerequisites %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-check me-2"></i>المتطلبات المسبقة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ course.prerequisites|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Course Content -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-play-circle me-2"></i>محتوى الدورة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if course.content.all %}
+                        <div class="list-group list-group-flush">
+                            {% for content in course.content.all %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if content.content_type == 'video' %}
+                                            <i class="fas fa-play-circle text-primary me-2"></i>
+                                        {% elif content.content_type == 'pdf' %}
+                                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                                        {% elif content.content_type == 'quiz' %}
+                                            <i class="fas fa-question-circle text-warning me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-secondary me-2"></i>
+                                        {% endif %}
+                                        {{ content.title }}
+                                    </h6>
+                                    {% if content.description %}
+                                    <p class="mb-1 text-muted small">{{ content.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    {% if content.duration %}
+                                    <small class="text-muted d-block">{{ content.duration }} دقيقة</small>
+                                    {% endif %}
+                                    {% if content.is_free %}
+                                    <span class="badge bg-success">مجاني</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">لم يتم إضافة محتوى للدورة بعد</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Enrollment Card -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <!-- Price -->
+                    <div class="mb-3">
+                        {% if course.price > 0 %}
+                            <h3 class="text-primary">{{ course.price }} ريال</h3>
+                        {% else %}
+                            <h3 class="text-success">مجاني</h3>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Enrollment Status -->
+                    {% if user.is_authenticated %}
+                        {% if is_enrolled %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                أنت مسجل في هذه الدورة
+                            </div>
+                            <a href="{% url 'courses:content' course.pk course.content.first.pk %}" 
+                               class="btn btn-primary btn-lg w-100 mb-2">
+                                <i class="fas fa-play me-2"></i>متابعة التعلم
+                            </a>
+                            <a href="{% url 'courses:progress' course.pk %}" 
+                               class="btn btn-outline-primary w-100">
+                                <i class="fas fa-chart-line me-2"></i>عرض التقدم
+                            </a>
+                        {% else %}
+                            {% if course.is_full %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    الدورة ممتلئة
+                                </div>
+                            {% else %}
+                                <a href="{% url 'courses:enroll' course.pk %}" 
+                                   class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-user-plus me-2"></i>التسجيل في الدورة
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            يجب تسجيل الدخول للتسجيل في الدورة
+                        </div>
+                        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>تسجيل الدخول
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Instructor Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>المدرب
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        {% if course.instructor.profile_picture %}
+                        <img src="{{ course.instructor.profile_picture.url }}" 
+                             class="rounded-circle me-3" width="60" height="60" 
+                             alt="{{ course.instructor.get_full_name }}">
+                        {% else %}
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-1">{{ course.instructor.get_full_name }}</h6>
+                            {% if course.instructor.bio %}
+                            <p class="text-muted small mb-0">{{ course.instructor.bio|truncatewords:15 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Course Details -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>تفاصيل الدورة
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-calendar-alt text-muted me-2"></i>
+                            <strong>تاريخ الإنشاء:</strong> {{ course.created_at|date:"d/m/Y" }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-muted me-2"></i>
+                            <strong>آخر تحديث:</strong> {{ course.updated_at|date:"d/m/Y" }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-users text-muted me-2"></i>
+                            <strong>عدد الطلاب:</strong> {{ course.enrollment_count }}
+                        </li>
+                        {% if course.enrollment_limit %}
+                        <li class="mb-2">
+                            <i class="fas fa-user-check text-muted me-2"></i>
+                            <strong>الحد الأقصى:</strong> {{ course.enrollment_limit }}
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

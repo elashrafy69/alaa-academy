@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إدارة الطلاب - أكاديمية علاء عبد الحميد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-card .icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        opacity: 0.8;
+    }
+    
+    .stats-card .number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-card .label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .stats-card.secondary {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stats-card.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .stats-card.warning {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    
+    .student-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .student-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .student-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .student-info {
+        flex-grow: 1;
+        margin-right: 15px;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+    
+    .student-email {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .student-stats {
+        display: flex;
+        gap: 15px;
+        font-size: 0.8rem;
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+    }
+    
+    .stat-item i {
+        margin-left: 5px;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .filters-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .bulk-actions {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .bulk-actions.show {
+        display: block;
+    }
+    
+    .table-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="fas fa-users me-2"></i>
+                        إدارة الطلاب
+                    </h2>
+                    <p class="text-muted">إدارة وتتبع جميع الطلاب المسجلين</p>
+                </div>
+                <div>
+                    <a href="{% url 'accounts:admin_export_students' %}" class="btn btn-outline-success me-2">
+                        <i class="fas fa-download me-1"></i>تصدير CSV
+                    </a>
+                    <a href="{% url 'accounts:admin_registration_codes' %}" class="btn btn-primary">
+                        <i class="fas fa-ticket-alt me-1"></i>أكواد التسجيل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="number">{{ total_students }}</div>
+                <div class="label">إجمالي الطلاب</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card secondary">
+                <div class="icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="number">{{ active_students }}</div>
+                <div class="label">طلاب نشطون</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card success">
+                <div class="icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="number">{{ new_students_today }}</div>
+                <div class="label">جدد اليوم</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card warning">
+                <div class="icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="number">{{ enrolled_students }}</div>
+                <div class="label">مسجلون في دورات</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">البحث</label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="البحث بالاسم، البريد، أو الهاتف..." 
+                       value="{{ search_query }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">الحالة</label>
+                <select name="status" class="form-control">
+                    <option value="">جميع الحالات</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>نشط</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>غير نشط</option>
+                    <option value="enrolled" {% if status_filter == 'enrolled' %}selected{% endif %}>مسجل في دورات</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">تاريخ التسجيل</label>
+                <select name="date_filter" class="form-control">
+                    <option value="">جميع التواريخ</option>
+                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>اليوم</option>
+                    <option value="week" {% if date_filter == 'week' %}selected{% endif %}>آخر أسبوع</option>
+                    <option value="month" {% if date_filter == 'month' %}selected{% endif %}>آخر شهر</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>بحث
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" id="bulkActions">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong id="selectedCount">0</strong> طالب محدد
+            </div>
+            <div>
+                <button class="btn btn-sm btn-success me-2" onclick="bulkAction('activate')">
+                    <i class="fas fa-check me-1"></i>تفعيل
+                </button>
+                <button class="btn btn-sm btn-warning me-2" onclick="bulkAction('deactivate')">
+                    <i class="fas fa-pause me-1"></i>إلغاء تفعيل
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="bulkAction('delete')">
+                    <i class="fas fa-trash me-1"></i>حذف
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Table Actions -->
+    <div class="table-actions">
+        <button class="btn btn-outline-primary btn-sm" onclick="selectAll()">
+            <i class="fas fa-check-square me-1"></i>تحديد الكل
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+            <i class="fas fa-square me-1"></i>إلغاء التحديد
+        </button>
+    </div>
+    
+    <!-- Students List -->
+    <div class="row">
+        {% for student in students %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="student-card card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <input type="checkbox" class="form-check-input me-3 student-checkbox" 
+                               value="{{ student.pk }}" onchange="updateBulkActions()">
+                        
+                        <div class="student-avatar">
+                            {% if student.profile_picture %}
+                                <img src="{{ student.profile_picture.url }}" alt="{{ student.get_full_name }}"
+                                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                                {{ student.first_name.0 }}{{ student.last_name.0 }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="student-info">
+                            <div class="student-name">{{ student.get_full_name }}</div>
+                            <div class="student-email">{{ student.email }}</div>
+                            <div class="student-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-book"></i>
+                                    {{ student.enrollments_count }} دورة
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    {{ student.completed_courses }} مكتمل
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-certificate"></i>
+                                    {{ student.certificates_count }} شهادة
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <div class="status-badge {% if student.is_active %}status-active{% else %}status-inactive{% endif %} mb-2">
+                                {% if student.is_active %}نشط{% else %}غير نشط{% endif %}
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    إجراءات
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:admin_student_detail' student.pk %}">
+                                            <i class="fas fa-eye me-2"></i>عرض التفاصيل
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:admin_student_edit' student.pk %}">
+                                            <i class="fas fa-edit me-2"></i>تعديل
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" 
+                                           onclick="confirmDelete('{{ student.pk }}', '{{ student.get_full_name }}')">
+                                            <i class="fas fa-trash me-2"></i>حذف
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">لا يوجد طلاب</h5>
+                <p class="text-muted">لم يتم العثور على أي طلاب مطابقين للبحث</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="تنقل الصفحات">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">الأولى</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">السابقة</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">التالية</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">الأخيرة</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    selectedCount.textContent = checkboxes.length;
+    
+    if (checkboxes.length > 0) {
+        bulkActions.classList.add('show');
+    } else {
+        bulkActions.classList.remove('show');
+    }
+}
+
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateBulkActions();
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateBulkActions();
+}
+
+function bulkAction(action) {
+    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    const studentIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (studentIds.length === 0) {
+        alert('يرجى اختيار طلاب أولاً');
+        return;
+    }
+    
+    let message = '';
+    switch(action) {
+        case 'activate':
+            message = `هل تريد تفعيل ${studentIds.length} طالب؟`;
+            break;
+        case 'deactivate':
+            message = `هل تريد إلغاء تفعيل ${studentIds.length} طالب؟`;
+            break;
+        case 'delete':
+            message = `هل تريد حذف ${studentIds.length} طالب؟ هذا الإجراء لا يمكن التراجع عنه.`;
+            break;
+    }
+    
+    if (confirm(message)) {
+        fetch('{% url "accounts:admin_student_bulk_actions" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                action: action,
+                student_ids: studentIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في الاتصال');
+        });
+    }
+}
+
+function confirmDelete(studentId, studentName) {
+    if (confirm(`هل تريد حذف الطالب "${studentName}"؟ هذا الإجراء لا يمكن التراجع عنه.`)) {
+        fetch('{% url "accounts:admin_student_bulk_actions" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                action: 'delete',
+                student_ids: [studentId]
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

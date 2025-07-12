@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}التسجيل في {{ course.title }} - أكاديمية علاء عبد الحميد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .enrollment-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .course-preview {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .course-preview img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+    }
+
+    .price-tag {
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 20px 0;
+    }
+
+    .price-tag.free {
+        background: #17a2b8;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+
+    .feature-list i {
+        color: #28a745;
+        margin-left: 10px;
+        width: 20px;
+    }
+
+    .instructor-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .instructor-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto 15px;
+        background: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+    }
+
+    .enrollment-form {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .registration-code-section {
+        background: #e3f2fd;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'courses:list' %}">الدورات</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'courses:detail' course.pk %}">{{ course.title }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">التسجيل</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Course Information -->
+        <div class="col-lg-8">
+            <!-- Enrollment Header -->
+            <div class="enrollment-card">
+                <h2>🎓 انضم إلى الدورة الآن!</h2>
+                <p class="lead">ابدأ رحلتك التعليمية واكتسب مهارات جديدة</p>
+
+                {% if course.price > 0 %}
+                    <div class="price-tag">{{ course.price }} ريال</div>
+                {% else %}
+                    <div class="price-tag free">مجاني تماماً!</div>
+                {% endif %}
+            </div>
+
+            <!-- Course Preview -->
+            <div class="course-preview mb-4">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                    <i class="fas fa-book fa-4x text-muted"></i>
+                </div>
+                {% endif %}
+
+                <div class="p-4">
+                    <h3>{{ course.title }}</h3>
+                    <p class="text-muted">{{ course.description|truncatewords:30 }}</p>
+
+                    <!-- Course Features -->
+                    <ul class="feature-list">
+                        <li>
+                            <i class="fas fa-play-circle"></i>
+                            {{ course.total_lessons }} درس تفاعلي
+                        </li>
+                        <li>
+                            <i class="fas fa-clock"></i>
+                            {{ course.estimated_duration }} ساعة من المحتوى
+                        </li>
+                        <li>
+                            <i class="fas fa-certificate"></i>
+                            شهادة إتمام معتمدة
+                        </li>
+                        <li>
+                            <i class="fas fa-mobile-alt"></i>
+                            وصول من جميع الأجهزة
+                        </li>
+                        <li>
+                            <i class="fas fa-infinity"></i>
+                            وصول مدى الحياة
+                        </li>
+                        {% if course.prerequisites %}
+                        <li>
+                            <i class="fas fa-list-check"></i>
+                            متطلبات مسبقة: {{ course.prerequisites|truncatewords:10 }}
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Learning Objectives -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye me-2"></i>ماذا ستتعلم؟
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ course.learning_objectives|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Enrollment Sidebar -->
+        <div class="col-lg-4">
+            <!-- Instructor Info -->
+            <div class="instructor-card mb-4">
+                <div class="instructor-avatar">
+                    {% if course.instructor.profile_picture %}
+                        <img src="{{ course.instructor.profile_picture.url }}"
+                             alt="{{ course.instructor.get_full_name }}"
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    {% else %}
+                        <i class="fas fa-user"></i>
+                    {% endif %}
+                </div>
+                <h6>{{ course.instructor.get_full_name }}</h6>
+                <p class="text-muted small">مدرب الدورة</p>
+                {% if course.instructor.bio %}
+                <p class="small">{{ course.instructor.bio|truncatewords:20 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Enrollment Form -->
+            <div class="enrollment-form">
+                <h5 class="text-center mb-4">
+                    <i class="fas fa-user-plus me-2"></i>التسجيل في الدورة
+                </h5>
+
+                {% if course.is_full %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <h6>عذراً، الدورة ممتلئة!</h6>
+                        <p class="mb-0">تم الوصول للحد الأقصى من المسجلين</p>
+                    </div>
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Course Summary -->
+                        <div class="text-center mb-4">
+                            <h6>{{ course.title }}</h6>
+                            <div class="d-flex justify-content-between">
+                                <span>السعر:</span>
+                                <strong>
+                                    {% if course.price > 0 %}
+                                        {{ course.price }} ريال
+                                    {% else %}
+                                        مجاني
+                                    {% endif %}
+                                </strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>المدة:</span>
+                                <strong>{{ course.estimated_duration }} ساعة</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>المستوى:</span>
+                                <strong>{{ course.get_difficulty_level_display }}</strong>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                أوافق على <a href="#" target="_blank">الشروط والأحكام</a>
+                            </label>
+                        </div>
+
+                        <!-- Enrollment Button -->
+                        <button type="submit" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-user-plus me-2"></i>
+                            {% if course.price > 0 %}
+                                التسجيل والدفع
+                            {% else %}
+                                التسجيل المجاني
+                            {% endif %}
+                        </button>
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                تسجيل آمن ومحمي
+                            </small>
+                        </div>
+                    </form>
+                {% endif %}
+
+                <!-- Registration Code Section -->
+                <div class="registration-code-section">
+                    <h6>
+                        <i class="fas fa-ticket-alt me-2"></i>لديك كود تسجيل؟
+                    </h6>
+                    <p class="small text-muted">
+                        إذا كان لديك كود تسجيل خاص، يمكنك استخدامه للحصول على خصم أو وصول مجاني
+                    </p>
+                    <form method="post" id="codeForm">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="registration_code" class="form-control"
+                                   placeholder="أدخل كود التسجيل">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Course Stats -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6 class="card-title">إحصائيات الدورة</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ course.enrollment_count }}</h4>
+                            <small class="text-muted">طالب مسجل</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">
+                                {% if course.enrollments.filter.review__isnull=False.count > 0 %}
+                                    4.5
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">تقييم الدورة</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'courses:detail' course.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>العودة لتفاصيل الدورة
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle registration code form
+    const codeForm = document.getElementById('codeForm');
+    if (codeForm) {
+        codeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const code = formData.get('registration_code');
+
+            if (!code.trim()) {
+                alert('يرجى إدخال كود التسجيل');
+                return;
+            }
+
+            // Here you would typically send an AJAX request to validate the code
+            // For now, we'll just show a message
+            alert('جاري التحقق من كود التسجيل...');
+        });
+    }
+
+    // Add animation to enrollment card
+    const enrollmentCard = document.querySelector('.enrollment-card');
+    if (enrollmentCard) {
+        enrollmentCard.style.transform = 'translateY(20px)';
+        enrollmentCard.style.opacity = '0';
+
+        setTimeout(() => {
+            enrollmentCard.style.transition = 'all 0.6s ease';
+            enrollmentCard.style.transform = 'translateY(0)';
+            enrollmentCard.style.opacity = '1';
+        }, 200);
+    }
+});
+</script>
+{% endblock %}

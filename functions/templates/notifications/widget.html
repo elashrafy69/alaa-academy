@@ -1,0 +1,460 @@
+<!-- Notifications Widget -->
+<div class="dropdown" id="notificationsWidget">
+    <button class="btn btn-outline-primary position-relative" type="button" 
+            data-bs-toggle="dropdown" aria-expanded="false" id="notificationsButton">
+        <i class="fas fa-bell"></i>
+        {% if unread_count > 0 %}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+              id="notificationsBadge">
+            {{ unread_count|default:0 }}
+        </span>
+        {% endif %}
+    </button>
+    
+    <div class="dropdown-menu dropdown-menu-end notifications-dropdown" style="width: 350px; max-height: 500px;">
+        <!-- Header -->
+        <div class="dropdown-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">الإشعارات</h6>
+            {% if unread_count > 0 %}
+            <button class="btn btn-sm btn-link text-primary p-0" onclick="markAllAsRead()">
+                تحديد الكل كمقروء
+            </button>
+            {% endif %}
+        </div>
+        
+        <div class="dropdown-divider"></div>
+        
+        <!-- Notifications List -->
+        <div class="notifications-list" id="notificationsList" style="max-height: 300px; overflow-y: auto;">
+            {% for notification in notifications %}
+            <div class="dropdown-item notification-item {% if not notification.is_read %}unread{% endif %}" 
+                 data-notification-id="{{ notification.id }}">
+                <div class="d-flex align-items-start">
+                    <div class="notification-icon me-3">
+                        <i class="{{ notification.get_icon }} {{ notification.get_color_class }}"></i>
+                    </div>
+                    
+                    <div class="notification-content flex-grow-1">
+                        <div class="notification-title">
+                            {{ notification.title }}
+                        </div>
+                        <div class="notification-message text-muted">
+                            {{ notification.message|truncatewords:10 }}
+                        </div>
+                        <div class="notification-time text-muted small">
+                            {{ notification.created_at|timesince }} مضت
+                        </div>
+                    </div>
+                    
+                    {% if not notification.is_read %}
+                    <div class="notification-status">
+                        <span class="badge bg-primary rounded-pill"></span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="notification-actions mt-2">
+                    {% if notification.action_url %}
+                    <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-primary me-2"
+                       onclick="markAsRead('{{ notification.id }}')">
+                        عرض
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            onclick="markAsRead('{{ notification.id }}')">
+                        تحديد كمقروء
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="dropdown-item text-center text-muted py-4">
+                <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                <div>لا توجد إشعارات</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="dropdown-divider"></div>
+        
+        <!-- Footer -->
+        <div class="dropdown-item text-center">
+            <a href="{% url 'notifications:list' %}" class="btn btn-sm btn-primary">
+                عرض جميع الإشعارات
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.notifications-dropdown {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 15px;
+}
+
+.notification-item {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #e3f2fd;
+}
+
+.notification-item.unread:hover {
+    background-color: #bbdefb;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.notification-message {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: 5px;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+}
+
+.notification-status .badge {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+}
+
+.notification-actions {
+    display: none;
+}
+
+.notification-item:hover .notification-actions {
+    display: block;
+}
+
+.dropdown-header h6 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+#notificationsBadge {
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animation for new notifications */
+@keyframes notificationPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.notification-new {
+    animation: notificationPulse 0.5s ease-in-out;
+}
+
+/* Loading state */
+.notifications-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.notifications-loading .spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+</style>
+
+<script>
+class NotificationsWidget {
+    constructor() {
+        this.unreadCount = {{ unread_count|default:0 }};
+        this.isOpen = false;
+        this.refreshInterval = null;
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.startAutoRefresh();
+    }
+    
+    setupEventListeners() {
+        // Handle dropdown toggle
+        const dropdown = document.getElementById('notificationsWidget');
+        dropdown.addEventListener('shown.bs.dropdown', () => {
+            this.isOpen = true;
+            this.loadNotifications();
+        });
+        
+        dropdown.addEventListener('hidden.bs.dropdown', () => {
+            this.isOpen = false;
+        });
+        
+        // Handle notification clicks
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.notification-item')) {
+                const notificationId = e.target.closest('.notification-item').dataset.notificationId;
+                if (notificationId) {
+                    this.markAsRead(notificationId);
+                }
+            }
+        });
+    }
+    
+    startAutoRefresh() {
+        // Refresh notifications every 30 seconds
+        this.refreshInterval = setInterval(() => {
+            if (!this.isOpen) {
+                this.refreshUnreadCount();
+            }
+        }, 30000);
+    }
+    
+    loadNotifications() {
+        fetch('/notifications/api/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.updateNotificationsList(data.notifications);
+                this.updateUnreadCount(data.unread_count);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+        });
+    }
+    
+    updateNotificationsList(notifications) {
+        const list = document.getElementById('notificationsList');
+        
+        if (notifications.length === 0) {
+            list.innerHTML = `
+                <div class="dropdown-item text-center text-muted py-4">
+                    <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                    <div>لا توجد إشعارات</div>
+                </div>
+            `;
+            return;
+        }
+        
+        list.innerHTML = notifications.map(notification => `
+            <div class="dropdown-item notification-item ${!notification.is_read ? 'unread' : ''}" 
+                 data-notification-id="${notification.id}">
+                <div class="d-flex align-items-start">
+                    <div class="notification-icon me-3">
+                        <i class="${notification.icon} ${notification.color_class}"></i>
+                    </div>
+                    
+                    <div class="notification-content flex-grow-1">
+                        <div class="notification-title">
+                            ${notification.title}
+                        </div>
+                        <div class="notification-message text-muted">
+                            ${notification.message.substring(0, 50)}${notification.message.length > 50 ? '...' : ''}
+                        </div>
+                        <div class="notification-time text-muted small">
+                            ${this.formatTime(notification.created_at)}
+                        </div>
+                    </div>
+                    
+                    ${!notification.is_read ? '<div class="notification-status"><span class="badge bg-primary rounded-pill"></span></div>' : ''}
+                </div>
+                
+                <div class="notification-actions mt-2">
+                    ${notification.action_url ? `<a href="${notification.action_url}" class="btn btn-sm btn-outline-primary me-2" onclick="markAsRead('${notification.id}')">عرض</a>` : ''}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="markAsRead('${notification.id}')">
+                        تحديد كمقروء
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    markAsRead(notificationId) {
+        fetch('/notifications/api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'mark_read',
+                notification_ids: [notificationId]
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.updateUnreadCount(data.unread_count);
+                // Update UI
+                const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                if (item) {
+                    item.classList.remove('unread');
+                    const badge = item.querySelector('.notification-status');
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+    
+    markAllAsRead() {
+        fetch('/notifications/api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'mark_read'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.updateUnreadCount(0);
+                // Update UI
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                    const badge = item.querySelector('.notification-status');
+                    if (badge) {
+                        badge.remove();
+                    }
+                });
+                
+                // Hide mark all button
+                const markAllBtn = document.querySelector('[onclick="markAllAsRead()"]');
+                if (markAllBtn) {
+                    markAllBtn.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error marking all notifications as read:', error);
+        });
+    }
+    
+    refreshUnreadCount() {
+        fetch('/notifications/api/?unread_only=true&limit=1', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.updateUnreadCount(data.unread_count);
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing unread count:', error);
+        });
+    }
+    
+    updateUnreadCount(count) {
+        this.unreadCount = count;
+        const badge = document.getElementById('notificationsBadge');
+        
+        if (count > 0) {
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                // Create badge if it doesn't exist
+                const button = document.getElementById('notificationsButton');
+                const newBadge = document.createElement('span');
+                newBadge.id = 'notificationsBadge';
+                newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                newBadge.textContent = count;
+                newBadge.style.fontSize = '0.7rem';
+                newBadge.style.minWidth = '18px';
+                newBadge.style.height = '18px';
+                newBadge.style.display = 'flex';
+                newBadge.style.alignItems = 'center';
+                newBadge.style.justifyContent = 'center';
+                button.appendChild(newBadge);
+            }
+        } else {
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+    }
+    
+    formatTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return 'الآن';
+        if (minutes < 60) return `${minutes} دقيقة مضت`;
+        if (hours < 24) return `${hours} ساعة مضت`;
+        return `${days} يوم مضى`;
+    }
+    
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
+}
+
+// Global functions for onclick handlers
+function markAsRead(notificationId) {
+    if (window.notificationsWidget) {
+        window.notificationsWidget.markAsRead(notificationId);
+    }
+}
+
+function markAllAsRead() {
+    if (window.notificationsWidget) {
+        window.notificationsWidget.markAllAsRead();
+    }
+}
+
+// Initialize widget when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    window.notificationsWidget = new NotificationsWidget();
+});
+</script>

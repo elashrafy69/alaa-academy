@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}إضافة محتوى - {{ course.title }} - أكاديمية علاء عبد الحميد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .content-type-info {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+
+    .file-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-area:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .file-upload-area.dragover {
+        border-color: #007bff;
+        background-color: #e3f2fd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fas fa-plus-circle me-2 text-primary"></i>
+                        إضافة محتوى جديد
+                    </h2>
+                    <p class="text-muted">{{ course.title }}</p>
+                </div>
+                <a href="{% url 'courses:admin_edit' course.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>العودة للدورة
+                </a>
+            </div>
+
+            <!-- Form -->
+            <form method="post" enctype="multipart/form-data" id="contentForm">
+                {% csrf_token %}
+
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle me-2"></i>معلومات المحتوى</h5>
+
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="fas fa-heading me-1"></i>عنوان المحتوى *
+                        </label>
+                        {{ form.title|add_class:"form-control" }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>وصف المحتوى
+                        </label>
+                        {{ form.description|add_class:"form-control" }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.content_type.id_for_label }}" class="form-label">
+                                <i class="fas fa-file me-1"></i>نوع المحتوى *
+                            </label>
+                            {{ form.content_type|add_class:"form-control" }}
+                            {% if form.content_type.errors %}
+                                <div class="text-danger small mt-1">{{ form.content_type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.duration.id_for_label }}" class="form-label">
+                                <i class="fas fa-clock me-1"></i>المدة (دقيقة)
+                            </label>
+                            {{ form.duration|add_class:"form-control" }}
+                            {% if form.duration.errors %}
+                                <div class="text-danger small mt-1">{{ form.duration.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.order_sequence.id_for_label }}" class="form-label">
+                                <i class="fas fa-sort-numeric-up me-1"></i>الترتيب *
+                            </label>
+                            {{ form.order_sequence|add_class:"form-control" }}
+                            {% if form.order_sequence.errors %}
+                                <div class="text-danger small mt-1">{{ form.order_sequence.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="form-section">
+                    <h5><i class="fas fa-upload me-2"></i>رفع الملف</h5>
+
+                    <div class="content-type-info" id="contentTypeInfo">
+                        <h6><i class="fas fa-info-circle me-2"></i>معلومات نوع المحتوى</h6>
+                        <div id="videoInfo" style="display: none;">
+                            <p><strong>فيديو:</strong> يمكنك رفع ملفات الفيديو بصيغة MP4, AVI, MOV. الحد الأقصى للحجم: 500 ميجابايت.</p>
+                        </div>
+                        <div id="pdfInfo" style="display: none;">
+                            <p><strong>PDF:</strong> يمكنك رفع ملفات PDF. الحد الأقصى للحجم: 50 ميجابايت.</p>
+                        </div>
+                        <div id="quizInfo" style="display: none;">
+                            <p><strong>اختبار:</strong> سيتم إنشاء صفحة اختبار تفاعلية. يمكنك إضافة رابط خارجي أو رفع ملف.</p>
+                        </div>
+                        <div id="assignmentInfo" style="display: none;">
+                            <p><strong>مهمة:</strong> يمكنك رفع ملف المهمة أو إضافة رابط خارجي.</p>
+                        </div>
+                    </div>
+
+                    <!-- File URL Option -->
+                    <div class="mb-3">
+                        <label for="{{ form.file_url.id_for_label }}" class="form-label">
+                            <i class="fas fa-link me-1"></i>رابط الملف (اختياري)
+                        </label>
+                        {{ form.file_url|add_class:"form-control" }}
+                        {% if form.file_url.errors %}
+                            <div class="text-danger small mt-1">{{ form.file_url.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">يمكنك إدخال رابط YouTube أو رابط ملف خارجي</div>
+                    </div>
+
+                    <!-- File Upload Option -->
+                    <div class="mb-3">
+                        <label for="{{ form.file_upload.id_for_label }}" class="form-label">
+                            <i class="fas fa-upload me-1"></i>أو رفع ملف
+                        </label>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            {{ form.file_upload|add_class:"form-control" }}
+                            <div class="mt-2">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">اسحب الملف هنا أو انقر للاختيار</p>
+                            </div>
+                        </div>
+                        {% if form.file_upload.errors %}
+                            <div class="text-danger small mt-1">{{ form.file_upload.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Settings -->
+                <div class="form-section">
+                    <h5><i class="fas fa-cogs me-2"></i>إعدادات المحتوى</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.is_free|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_free.id_for_label }}">
+                                    <i class="fas fa-gift me-1"></i>محتوى مجاني
+                                </label>
+                                <div class="form-text">يمكن للجميع الوصول إليه بدون تسجيل</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.is_published|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+                                    <i class="fas fa-eye me-1"></i>منشور
+                                </label>
+                                <div class="form-text">مرئي للطلاب المسجلين</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>إضافة المحتوى
+                    </button>
+
+                    <a href="{% url 'courses:admin_edit' course.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTypeField = document.getElementById('id_content_type');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('id_file_upload');
+
+    // Show content type info
+    function updateContentTypeInfo() {
+        const contentType = contentTypeField.value;
+
+        // Hide all info divs
+        document.querySelectorAll('[id$="Info"]').forEach(div => {
+            div.style.display = 'none';
+        });
+
+        // Show relevant info
+        if (contentType) {
+            const infoDiv = document.getElementById(contentType + 'Info');
+            if (infoDiv) {
+                infoDiv.style.display = 'block';
+            }
+        }
+    }
+
+    contentTypeField.addEventListener('change', updateContentTypeInfo);
+    updateContentTypeInfo(); // Initial call
+
+    // Drag and drop functionality
+    fileUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    fileUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+
+    fileUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateFileInfo(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            updateFileInfo(this.files[0]);
+        }
+    });
+
+    function updateFileInfo(file) {
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'mt-2 text-success';
+        fileInfo.innerHTML = `<i class="fas fa-check-circle me-1"></i>تم اختيار: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+
+        // Remove existing file info
+        const existingInfo = fileUploadArea.querySelector('.text-success');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+
+        fileUploadArea.appendChild(fileInfo);
+    }
+});
+</script>
+{% endblock %}

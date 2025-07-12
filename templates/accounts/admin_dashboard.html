@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}لوحة تحكم المدير - أكاديمية علاء عبد الحميد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar">
+            <div class="p-3">
+                <h6 class="text-light mb-3">لوحة تحكم المدير</h6>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="{% url 'accounts:dashboard' %}">
+                        <i class="fas fa-tachometer-alt me-2"></i>الرئيسية
+                    </a>
+                    <a class="nav-link" href="{% url 'courses:list' %}">
+                        <i class="fas fa-book me-2"></i>إدارة الدورات
+                    </a>
+                    <a class="nav-link" href="/admin/">
+                        <i class="fas fa-cogs me-2"></i>لوحة الإدارة
+                    </a>
+                    <a class="nav-link" href="{% url 'analytics:dashboard' %}">
+                        <i class="fas fa-chart-line me-2"></i>التحليلات
+                    </a>
+                    <a class="nav-link" href="{% url 'accounts:profile' %}">
+                        <i class="fas fa-user-edit me-2"></i>الملف الشخصي
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 main-content">
+            <!-- Welcome Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2>مرحباً، {{ user.get_full_name|default:user.username }}!</h2>
+                    <p class="text-muted">إليك نظرة عامة على أداء الأكاديمية</p>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book fa-2x mb-2"></i>
+                            <h4>{{ total_courses }}</h4>
+                            <p class="mb-0">إجمالي الدورات</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h4>{{ total_students }}</h4>
+                            <p class="mb-0">إجمالي الطلاب</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-graduate fa-2x mb-2"></i>
+                            <h4>{{ total_enrollments }}</h4>
+                            <p class="mb-0">إجمالي التسجيلات</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <h4>{{ weekly_enrollments|default:0 }}</h4>
+                            <p class="mb-0">تسجيلات هذا الأسبوع</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>إجراءات سريعة
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'courses:admin_create' %}" class="btn btn-primary w-100">
+                                        <i class="fas fa-plus me-2"></i>إنشاء دورة جديدة
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="/admin/accounts/registrationcode/add/" class="btn btn-success w-100">
+                                        <i class="fas fa-ticket-alt me-2"></i>إنشاء كود تسجيل
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="/admin/accounts/user/" class="btn btn-info w-100">
+                                        <i class="fas fa-users me-2"></i>إدارة المستخدمين
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="{% url 'analytics:dashboard' %}" class="btn btn-warning w-100">
+                                        <i class="fas fa-chart-bar me-2"></i>عرض التحليلات
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clock me-2"></i>التسجيلات الأخيرة
+                            </h5>
+                            <a href="/admin/courses/enrollment/" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_enrollments %}
+                                <div class="list-group list-group-flush">
+                                    {% for enrollment in recent_enrollments %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ enrollment.student.get_full_name }}</h6>
+                                            <p class="mb-1 text-muted small">{{ enrollment.course.title }}</p>
+                                            <small class="text-muted">{{ enrollment.enrollment_date|timesince }} مضت</small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">جديد</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center py-3">لا توجد تسجيلات حديثة</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-book me-2"></i>الدورات الحديثة
+                            </h5>
+                            <a href="/admin/courses/course/" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_courses %}
+                                <div class="list-group list-group-flush">
+                                    {% for course in recent_courses %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ course.title }}</h6>
+                                            <p class="mb-1 text-muted small">{{ course.category.name }}</p>
+                                            <small class="text-muted">{{ course.created_at|timesince }} مضت</small>
+                                        </div>
+                                        <span class="badge bg-{{ course.status|yesno:'success,warning,secondary' }} rounded-pill">
+                                            {{ course.get_status_display }}
+                                        </span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center py-3">لا توجد دورات حديثة</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

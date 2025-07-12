@@ -1,0 +1,685 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if query %}
+        نتائج البحث عن "{{ query }}" - أكاديمية علاء عبد الحميد
+    {% else %}
+        البحث - أكاديمية علاء عبد الحميد
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+    }
+    
+    .search-box {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 15px 60px 15px 20px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .search-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #667eea;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .search-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        z-index: 1000;
+        display: none;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .suggestion-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        color: #333;
+        transition: background 0.2s ease;
+    }
+    
+    .suggestion-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    
+    .filters-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .filter-group {
+        margin-bottom: 25px;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .filter-option {
+        margin-bottom: 10px;
+    }
+    
+    .filter-option input[type="radio"],
+    .filter-option input[type="checkbox"] {
+        margin-left: 10px;
+    }
+    
+    .filter-option label {
+        cursor: pointer;
+        color: #6c757d;
+        transition: color 0.2s ease;
+    }
+    
+    .filter-option label:hover {
+        color: #667eea;
+    }
+    
+    .search-results {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .search-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .search-info {
+        color: #6c757d;
+    }
+    
+    .result-item {
+        padding: 25px;
+        border: 1px solid #f0f0f0;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .result-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .result-type {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+    
+    .result-type.course {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .result-type.instructor {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+    
+    .result-type.content {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+    
+    .result-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        line-height: 1.4;
+    }
+    
+    .result-title mark {
+        background: #fff3cd;
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+    
+    .result-description {
+        color: #6c757d;
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    
+    .result-metadata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+    
+    .metadata-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .metadata-item i {
+        margin-left: 5px;
+    }
+    
+    .popular-searches {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .popular-tag {
+        display: inline-block;
+        padding: 8px 15px;
+        background: #f8f9fa;
+        border-radius: 20px;
+        margin: 5px;
+        color: #6c757d;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .popular-tag:hover {
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .no-results i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .pagination-container {
+        margin-top: 40px;
+        text-align: center;
+    }
+    
+    .loading-spinner {
+        text-align: center;
+        padding: 40px;
+        display: none;
+    }
+    
+    .spinner-border {
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Search Header -->
+<div class="search-container">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>البحث في الأكاديمية</h1>
+            <p>ابحث عن الدورات والمدربين والمحتوى التعليمي</p>
+        </div>
+        
+        <div class="search-box">
+            <form method="get" id="searchForm">
+                <input type="text" name="q" class="search-input" 
+                       placeholder="ابحث عن دورات، مدربين، مواضيع..." 
+                       value="{{ query }}" id="searchInput" autocomplete="off">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+                
+                <!-- Search Suggestions -->
+                <div class="search-suggestions" id="searchSuggestions"></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3">
+            <div class="filters-sidebar">
+                <h5><i class="fas fa-filter me-2"></i>تصفية النتائج</h5>
+                
+                <form method="get" id="filtersForm">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    
+                    <!-- Category Filter -->
+                    <div class="filter-group">
+                        <div class="filter-title">الفئة</div>
+                        {% for category in categories %}
+                        <div class="filter-option">
+                            <input type="radio" name="category" value="{{ category.id }}" 
+                                   id="cat_{{ category.id }}"
+                                   {% if current_filters.category == category.id|stringformat:"s" %}checked{% endif %}>
+                            <label for="cat_{{ category.id }}">{{ category.name }}</label>
+                        </div>
+                        {% endfor %}
+                        <div class="filter-option">
+                            <input type="radio" name="category" value="" id="cat_all"
+                                   {% if not current_filters.category %}checked{% endif %}>
+                            <label for="cat_all">جميع الفئات</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Difficulty Filter -->
+                    <div class="filter-group">
+                        <div class="filter-title">مستوى الصعوبة</div>
+                        {% for value, label in difficulty_choices %}
+                        <div class="filter-option">
+                            <input type="radio" name="difficulty" value="{{ value }}" 
+                                   id="diff_{{ value }}"
+                                   {% if current_filters.difficulty == value %}checked{% endif %}>
+                            <label for="diff_{{ value }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                        <div class="filter-option">
+                            <input type="radio" name="difficulty" value="" id="diff_all"
+                                   {% if not current_filters.difficulty %}checked{% endif %}>
+                            <label for="diff_all">جميع المستويات</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Filter -->
+                    <div class="filter-group">
+                        <div class="filter-title">السعر</div>
+                        <div class="filter-option">
+                            <input type="radio" name="price_range" value="free" id="price_free"
+                                   {% if current_filters.price_range == 'free' %}checked{% endif %}>
+                            <label for="price_free">مجاني</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="radio" name="price_range" value="paid" id="price_paid"
+                                   {% if current_filters.price_range == 'paid' %}checked{% endif %}>
+                            <label for="price_paid">مدفوع</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="radio" name="price_range" value="" id="price_all"
+                                   {% if not current_filters.price_range %}checked{% endif %}>
+                            <label for="price_all">جميع الأسعار</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Duration Filter -->
+                    <div class="filter-group">
+                        <div class="filter-title">المدة</div>
+                        <div class="filter-option">
+                            <input type="radio" name="duration_range" value="short" id="duration_short"
+                                   {% if current_filters.duration_range == 'short' %}checked{% endif %}>
+                            <label for="duration_short">قصيرة (أقل من 10 ساعات)</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="radio" name="duration_range" value="medium" id="duration_medium"
+                                   {% if current_filters.duration_range == 'medium' %}checked{% endif %}>
+                            <label for="duration_medium">متوسطة (10-30 ساعة)</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="radio" name="duration_range" value="long" id="duration_long"
+                                   {% if current_filters.duration_range == 'long' %}checked{% endif %}>
+                            <label for="duration_long">طويلة (أكثر من 30 ساعة)</label>
+                        </div>
+                        <div class="filter-option">
+                            <input type="radio" name="duration_range" value="" id="duration_all"
+                                   {% if not current_filters.duration_range %}checked{% endif %}>
+                            <label for="duration_all">جميع المدد</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>تطبيق المرشحات
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Popular Searches -->
+            {% if popular_searches %}
+            <div class="popular-searches">
+                <h6><i class="fas fa-fire me-2"></i>البحثات الشائعة</h6>
+                {% for search in popular_searches %}
+                <a href="?q={{ search.query }}" class="popular-tag">{{ search.query }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Search Results -->
+        <div class="col-lg-9">
+            <div class="search-results">
+                {% if query %}
+                <div class="search-header">
+                    <div>
+                        <h4>نتائج البحث عن "{{ query }}"</h4>
+                        <div class="search-info">
+                            {% if search_results.total_count > 0 %}
+                                عُثر على {{ search_results.total_count }} نتيجة
+                            {% else %}
+                                لم يتم العثور على نتائج
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if search_results.suggestions %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            اقتراحات
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for suggestion in search_results.suggestions %}
+                            <li><a class="dropdown-item" href="?q={{ suggestion }}">{{ suggestion }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري البحث...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="searchResultsContainer">
+                    {% if search_results.results %}
+                        {% for result in search_results.results %}
+                        <div class="result-item" onclick="recordClick('{{ query }}', '{{ result.type }}', '{{ result.object.pk }}', {{ result.position }}, '{{ result.url }}')">
+                            <div class="result-type {{ result.type }}">
+                                {% if result.type == 'course' %}
+                                    <i class="fas fa-book me-1"></i>دورة
+                                {% elif result.type == 'instructor' %}
+                                    <i class="fas fa-user-tie me-1"></i>مدرب
+                                {% elif result.type == 'content' %}
+                                    <i class="fas fa-file-alt me-1"></i>محتوى
+                                {% endif %}
+                            </div>
+                            
+                            <h5 class="result-title">{{ result.highlight|safe }}</h5>
+                            <p class="result-description">{{ result.description }}</p>
+                            
+                            <div class="result-metadata">
+                                {% if result.type == 'course' %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-tag"></i>
+                                        {{ result.metadata.category }}
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-user"></i>
+                                        {{ result.metadata.instructor }}
+                                    </div>
+                                    {% if result.metadata.price == 0 %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-gift"></i>
+                                        مجاني
+                                    </div>
+                                    {% else %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        {{ result.metadata.price }} ريال
+                                    </div>
+                                    {% endif %}
+                                    {% if result.metadata.rating %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-star"></i>
+                                        {{ result.metadata.rating|floatformat:1 }}
+                                    </div>
+                                    {% endif %}
+                                {% elif result.type == 'instructor' %}
+                                    {% if result.metadata.specialization %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        {{ result.metadata.specialization }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-book"></i>
+                                        {{ result.metadata.courses_count }} دورة
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-users"></i>
+                                        {{ result.metadata.students_count }} طالب
+                                    </div>
+                                {% elif result.type == 'content' %}
+                                    <div class="metadata-item">
+                                        <i class="fas fa-book"></i>
+                                        {{ result.metadata.course }}
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-clock"></i>
+                                        {{ result.metadata.duration }} دقيقة
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Pagination -->
+                        {% if search_results.total_pages > 1 %}
+                        <div class="pagination-container">
+                            <nav aria-label="تنقل الصفحات">
+                                <ul class="pagination justify-content-center">
+                                    {% if search_results.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?q={{ query }}&page={{ search_results.page|add:'-1' }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}">السابقة</a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ search_results.page }} من {{ search_results.total_pages }}</span>
+                                    </li>
+                                    
+                                    {% if search_results.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?q={{ query }}&page={{ search_results.page|add:'1' }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}">التالية</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-search"></i>
+                            <h5>لم يتم العثور على نتائج</h5>
+                            <p>جرب استخدام كلمات مختلفة أو تقليل المرشحات</p>
+                            
+                            {% if trending_searches %}
+                            <div class="mt-4">
+                                <h6>البحثات الرائجة:</h6>
+                                {% for search in trending_searches %}
+                                <a href="?q={{ search.query }}" class="popular-tag">{{ search.query }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h5>ابدأ البحث</h5>
+                        <p>استخدم مربع البحث أعلاه للعثور على الدورات والمحتوى التعليمي</p>
+                        
+                        {% if popular_searches %}
+                        <div class="mt-4">
+                            <h6>البحثات الشائعة:</h6>
+                            {% for search in popular_searches %}
+                            <a href="?q={{ search.query }}" class="popular-tag">{{ search.query }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class SearchManager {
+    constructor() {
+        this.searchInput = document.getElementById('searchInput');
+        this.suggestionsContainer = document.getElementById('searchSuggestions');
+        this.loadingSpinner = document.getElementById('loadingSpinner');
+        this.debounceTimer = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        // Search suggestions
+        this.searchInput.addEventListener('input', (e) => {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => {
+                this.getSuggestions(e.target.value);
+            }, 300);
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) {
+                this.hideSuggestions();
+            }
+        });
+        
+        // Filter form auto-submit
+        const filterInputs = document.querySelectorAll('#filtersForm input[type="radio"]');
+        filterInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                document.getElementById('filtersForm').submit();
+            });
+        });
+    }
+    
+    getSuggestions(query) {
+        if (query.length < 2) {
+            this.hideSuggestions();
+            return;
+        }
+        
+        fetch(`/search/suggestions/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.suggestions.length > 0) {
+                    this.showSuggestions(data.suggestions);
+                } else {
+                    this.hideSuggestions();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching suggestions:', error);
+                this.hideSuggestions();
+            });
+    }
+    
+    showSuggestions(suggestions) {
+        this.suggestionsContainer.innerHTML = suggestions.map(suggestion => 
+            `<div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">${suggestion}</div>`
+        ).join('');
+        
+        this.suggestionsContainer.style.display = 'block';
+    }
+    
+    hideSuggestions() {
+        this.suggestionsContainer.style.display = 'none';
+    }
+}
+
+function selectSuggestion(suggestion) {
+    document.getElementById('searchInput').value = suggestion;
+    document.getElementById('searchForm').submit();
+}
+
+function recordClick(query, contentType, objectId, position, url) {
+    // Record the click
+    fetch('/search/click/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        body: JSON.stringify({
+            query: query,
+            content_type: contentType,
+            object_id: objectId,
+            position: position
+        })
+    }).catch(error => {
+        console.error('Error recording click:', error);
+    });
+    
+    // Navigate to the URL
+    window.location.href = url;
+}
+
+// Initialize search manager
+document.addEventListener('DOMContentLoaded', function() {
+    new SearchManager();
+});
+</script>
+{% endblock %}
