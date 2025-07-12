@@ -1,2 +1,1 @@
-web: gunicorn alaa_academy.wsgi --log-file -
-release: python manage.py migrate && python setup_production.py
+web: python manage.py migrate && python manage.py collectstatic --noinput && python setup_production.py && gunicorn alaa_academy.wsgi --bind 0.0.0.0:$PORT
