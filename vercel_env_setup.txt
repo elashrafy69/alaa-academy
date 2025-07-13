@@ -1,0 +1,17 @@
+🔧 متغيرات البيئة المطلوبة لـ Vercel:
+
+DEBUG=False
+SECRET_KEY=django-production-secret-key-alaa-academy-2024-secure-key-change-this
+USE_POSTGRES=True
+DATABASE_URL=postgresql://postgres.srnyumtbsyxiqkvwkcpi:AlaaAcademy2024Production!@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+ALLOWED_HOSTS=.vercel.app,alaa-academy.vercel.app
+SECURE_SSL_REDIRECT=True
+SECURE_HSTS_SECONDS=31536000
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+
+📋 خطوات إضافة المتغيرات في Vercel:
+1. اذهب إلى لوحة تحكم Vercel
+2. اختر المشروع
+3. اذهب إلى Settings > Environment Variables
+4. أضف كل متغير من القائمة أعلاه
