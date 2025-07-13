@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # Install dependencies
-pip install -r requirements.txt
+pip3.9 install -r requirements.txt
 
 # Run migrations
-python manage.py migrate
+python3.9 manage.py migrate
 
 # Collect static files
-python manage.py collectstatic --noinput --clear
+python3.9 manage.py collectstatic --noinput --clear
 
-# Setup initial data
-python setup_production.py
+# Create staticfiles_build directory
+mkdir -p staticfiles_build
+cp -r staticfiles/* staticfiles_build/
