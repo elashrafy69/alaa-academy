@@ -118,7 +118,7 @@
                 </ul>
 
                 <!-- Quick Search -->
-                <form class="d-flex me-3" action="{% url 'search:search' %}" method="get">
+                <form class="d-flex me-3" action="{% url 'courses:list' %}" method="get">
                     <input class="form-control me-2" type="search" name="q" placeholder="بحث سريع..."
                            style="width: 200px; border-radius: 20px;">
                     <button class="btn btn-outline-light" type="submit" style="border-radius: 20px;">
@@ -145,7 +145,7 @@
                                 <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                     <i class="fas fa-user-edit me-2"></i>الملف الشخصي
                                 </a></li>
-                                <li><a class="dropdown-item" href="{% url 'notifications:preferences' %}">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                     <i class="fas fa-bell me-2"></i>إعدادات الإشعارات
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>

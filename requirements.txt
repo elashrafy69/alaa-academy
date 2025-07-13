@@ -1,40 +1,8 @@
 Django==5.2.1
-djangorestframework==3.16.0
 python-decouple==3.8
-psycopg2-binary==2.9.10
 dj-database-url==2.1.0
-supabase==2.16.0
-firebase-admin==6.9.0
+psycopg2-binary==2.9.10
 Pillow==11.2.1
-reportlab==4.4.2
-qrcode[pil]==8.2
 django-cors-headers==4.7.0
-django-crispy-forms==2.3
-crispy-bootstrap5==2024.10
-django-widget-tweaks==1.5.0
 whitenoise==6.8.2
 gunicorn==23.0.0
-
-# Security and validation
-bleach==6.1.0
-python-magic==0.4.27
-
-# Caching and performance
-redis==5.0.1
-django-redis==5.4.0
-
-# Task queue (optional)
-celery==5.3.4
-
-# Monitoring and logging
-sentry-sdk==1.40.6
-
-# Development and testing
-pytest==7.4.4
-pytest-django==4.8.0
-coverage==7.4.0
-factory-boy==3.3.0
-
-# Additional utilities
-python-dateutil==2.8.2
-requests==2.31.0

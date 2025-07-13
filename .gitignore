@@ -31,6 +31,8 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+venv/
+env/
 
 # Node modules
 node_modules/
@@ -39,6 +41,8 @@ node_modules/
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+functions/
+firebase-service-account.json
 
 # Logs
 logs/
@@ -58,3 +62,9 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Deployment files
+deploy_*.py
+deploy_*.bat
+push_to_github.py
+DEPLOYMENT_GUIDE.md
